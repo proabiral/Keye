@@ -13,7 +13,10 @@ parser.add_argument('-s', '--singleurl', help='Single URL to add. E.g: http://go
 parser.add_argument('-ul', '--urlslist', help='File with new urls to add. E.g: urls.txt', dest='urlslist')
 parser.add_argument('-rm', '--remove', help='URL to remove from database. E.g: http://google.com', dest='urltoremove')
 parser.add_argument('-d', '--display', help='Display all monitored URLs', required =  False, nargs='?', const="True", dest='displayurls')
+parser.add_argument('-x', '--add-conn-error', help='Add urls to db even when connection fails at the time of adding', required =  False,action='store_true', dest='addOnConnError')
+
 args = parser.parse_args()
+
 
 def db_install():
     if (os.path.isfile('./keye.db')) == False:
@@ -38,6 +41,7 @@ def addurlsfromlist():
         request(url)
 
 def request(url):
+    oURL = url  # saving original url for later use
     try:
         if not "http" in url:
             url = "http://" + url
@@ -47,7 +51,6 @@ def request(url):
             print("We have successfully added the URL to be monitored.")
         except Exception as e:
             print(e)
-
     except:
         try:
             url = url.replace("http://", "https://")
@@ -55,7 +58,10 @@ def request(url):
             committodb(url, contentlength)
             print("We have successfully added the URL to be monitored.")
         except Exception as e:
-            print("We could not connect to {} due to following error: {}".format(url, e))
+        	if args.addOnConnError:
+        		committodb(oURL, '-1')
+        		print("We have successfully added the URL to be monitored despite of error.")
+        	print("We could not connect to {} due to following error: {}".format(url, e))
 
 def committodb(url, contentlength):
     try:
