@@ -41,10 +41,10 @@ def addurlsfromlist():
         request(url)
 
 def request(url):
-    oURL = url  # saving original url for later use
     try:
         if not "http" in url:
             url = "http://" + url
+            oURL = url  # saving original url for later use
         contentlength = requests.get(url, allow_redirects=True, verify=False, timeout=5).headers['content-length']
         try:
             committodb(url, contentlength)
