@@ -32,35 +32,53 @@ def db_install():
 
 def addsingleurl():
     url = args.singleurl
+    all_rows=getFromDB()
+    for row in all_rows:
+        urlDB = row[1]
+        if urlDB == url:
+            print("url already present in db : "+url)
+            return
     request(url)
 
 def addurlsfromlist():
+    all_rows=getFromDB()
+    urlsDB=[]
+    urlsFile=[]
+
+    for row in all_rows:
+        urlDB = row[1]
+        urlsDB.append(urlDB)
+
     urlslist = open(args.urlslist, "r")
-    for url in urlslist:
-        url = url.rstrip()
+    for urlFile in urlslist:
+        urlFile = urlFile.rstrip()
+        urlsFile.append(urlFile)
+    
+    for url in set(urlsFile).difference(set(urlsDB)):
         request(url)
 
+
 def request(url):
+    oURL = url  # saving original url for later use
     try:
         if not "http" in url:
             url = "http://" + url
-            oURL = url  # saving original url for later use
         contentlength = requests.get(url, allow_redirects=True, verify=False, timeout=5).headers['content-length']
         try:
-            committodb(url, contentlength)
-            print("We have successfully added the URL to be monitored.")
+            committodb(oURL, contentlength)
+            print("We have successfully added " + url +" to be monitored.")
         except Exception as e:
             print(e)
     except:
         try:
             url = url.replace("http://", "https://")
             contentlength = requests.get(url, allow_redirects=True, timeout=5).headers['content-length']
-            committodb(url, contentlength)
-            print("We have successfully added the URL to be monitored.")
+            committodb(oURL, contentlength)
+            print("We have successfully added " + url +" to be monitored.")
         except Exception as e:
         	if args.addOnConnError:
         		committodb(oURL, '-1')
-        		print("We have successfully added the URL to be monitored despite of error.")
+        		print("We have successfully added the " + oURL + " to be monitored despite of error.")
         	print("We could not connect to {} due to following error: {}".format(url, e))
 
 def committodb(url, contentlength):
@@ -71,15 +89,19 @@ def committodb(url, contentlength):
     except Exception as e:
         print(e)
 
-def getfromdb():
-    try:
+def getFromDB():
         cursor.execute('''SELECT id, url, contentlength FROM urls''')
         all_rows = cursor.fetchall()
-        for row in all_rows:
-            id = row[0]
-            url = row[1]
-            contentlength = str(row[2])
-            connect(id, url, contentlength)
+        return all_rows
+
+def main():
+    try:
+            all_rows=getFromDB()
+            for row in all_rows:
+                id = row[0]
+                url = row[1]
+                contentlength = str(row[2])
+                connect(id, url, contentlength)
     except Exception as e:
         print(e)
 
@@ -132,6 +154,6 @@ elif args.urltoremove:
 elif args.displayurls:
     displayurls()
 else:
-    getfromdb()
+    main()
 
 db.close()
