@@ -57,7 +57,6 @@ def addurlsfromlist():
     for url in set(urlsFile).difference(set(urlsDB)):
         request(url)
 
-
 def request(url):
     oURL = url  # saving original url for later use
     try:
@@ -106,6 +105,9 @@ def main():
         print(e)
 
 def connect(id, url, contentlength):
+    if "http" not in url:
+        url = 'http://'+url
+
     try:
         newcontentlength = requests.get(url, allow_redirects=True, verify=False, timeout=5).headers['content-length']
         if newcontentlength == contentlength:
